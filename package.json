@@ -1,0 +1,36 @@
+{
+  "name": "any2api-generator-soap",
+  "version": "0.1.0",
+  "author": "Johannes Wettinger <mail@jojow.de>",
+  "description": "SOAP/WSDL API implementation generator for any2api",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/any2api/any2api-generator-soap"
+  },
+  "contributors": [
+    {
+      "name": "Johannes Wettinger",
+      "email": "mail@jojow.de"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "any2api",
+    "soap",
+    "wsdl",
+    "api",
+    "generator"
+  ],
+  "preferGlobal": false,
+  "dependencies": {
+    "lodash": "~3.5.0",
+    "async": "~0.9.0",
+    "fs-extra": "~0.16.5",
+    "string": "~3.0.0",
+    "shortid": "~2.1.3",
+    "any2api-util": "*"
+  },
+  "engines": {
+    "node": ">= 0.10"
+  }
+}

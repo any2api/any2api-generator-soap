@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+//var debug = require('debug')(require('../package.json').name);
+var soap = require('soap');
+var fs = require('fs');
+var app = require('../app');
+var wsdl = fs.readFileSync(path.resolve(__dirname, '..', 'spec.wsdl'), 'utf8');
+
+var port = process.env.PORT || 3000;
+
+var server = http.createServer(function(req, res) {
+  res.end('404 Not Found: ' + req.url);
+});
+
+server.listen(port);
+
+soap.listen(server, '/', app, wsdl);
+
+server.log = console.log;
