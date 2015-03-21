@@ -29,7 +29,7 @@
             <% if (parameter.wsdl_doc) { %>
             <annotation>
               <documentation>
-<![CDATA[<%= parameter.wsdl_doc.trim() %>]]>
+                <![CDATA[<%= parameter.wsdl_doc.trim() %>]]>
               </documentation>
             </annotation>
             <% } %>
@@ -44,7 +44,7 @@
             <% if (result.wsdl_doc) { %>
             <annotation>
               <documentation>
-<![CDATA[<%= result.wsdl_doc.trim() %>]]>
+                <![CDATA[<%= result.wsdl_doc.trim() %>]]>
               </documentation>
             </annotation>
             <% } %>
@@ -72,7 +72,7 @@
   
   <% if (implementation.wsdl_doc) { %>
   <documentation>
-<![CDATA[<%= implementation.wsdl_doc.trim() %>]]>
+    <![CDATA[<%= implementation.wsdl_doc.trim() %>]]>
   </documentation>
   <% } %>
 
@@ -122,7 +122,7 @@
   </binding>
   <% }); %>
 
-  <% if (invokers) { %>
+  <% if (!_.isEmpty(invokers)) { %>
   <service name="invokers">
     <% _.forEach(invokers, function(invoker, name) { %>
     <port name="<%= invoker.wsdl_name %>" binding="tns:<%= invoker.wsdl_name %>SoapBinding">
@@ -132,7 +132,7 @@
   </service>
   <% } %>
 
-  <% if (executables) { %>
+  <% if (!_.isEmpty(executables)) { %>
   <service name="executables">
     <% _.forEach(executables, function(executable, name) { %>
     <port name="<%= executable.wsdl_name %>" binding="tns:<%= executable.wsdl_name %>SoapBinding">
