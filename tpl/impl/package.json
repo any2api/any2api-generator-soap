@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "prepare-runtime": "npm install -s && export IMPL_DIR=`pwd` && for INVOKER_DIR in ./invokers/*; do cd $IMPL_DIR; cd $INVOKER_DIR; npm run prepare-runtime; done",
-    "start": "node ./bin/server",
+    "start": "node ./app.js",
     "test": "mocha",
     "smoketest": "mocha smoketest"
   },
@@ -12,14 +12,12 @@
     "debug": "~2.0.0",
     "uuid": "~2.0.0",
     "lodash": "~2.4.0",
+    "async": "~0.9.0",
+    "string": "~2.2.0",
     "any2api-util": "*" 
   },
   "devDependencies": {
     "mocha": "~1.21.4",
-    "chai": "~1.9.1",
-    "supertest": "~0.14.0",
-    "js-yaml": "~3.2.2",
-    "string": "~2.2.0",
-    "async": "~0.9.0"
+    "chai": "~1.9.1"
   }
 }
