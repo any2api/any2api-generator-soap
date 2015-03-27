@@ -20,8 +20,8 @@ var timeout = process.env.TIMEOUT || 5 * 60 * 1000; // 5mins
 
 
 
-var wsdl = fs.readFileSync(path.resolve(__dirname, 'spec.wsdl'), 'utf8');
-wsdl = wsdl.replace(/{{baseAddress}}/g, baseAddress);
+var rawWsdl = fs.readFileSync(path.resolve(__dirname, 'spec.wsdl'), 'utf8');
+var wsdl = rawWsdl.replace(/{{baseAddress}}/g, baseAddress);
 
 var apiSpec;
 
@@ -54,6 +54,9 @@ var invoke = function(input, executableName, invokerName, callback) {
       try {
         instance.parameters[name] = JSON.parse(value);
       } catch (err) {
+        err.soapText = 'Parameter value ' + name + 'is not valid JSON: ';
+        err.soapText += err.message || err.toString();
+
         return callback(err);
       }
     } else {
@@ -104,10 +107,10 @@ var toSoapError = function(err) {
   return {
     Fault: {
       Code: {
-        Value: "soap:Sender",
-        Subcode: { value: "rpc:Error" }
+        Value: "soap:Sender"
+        //, Subcode: { value: "soap:Error" }
       },
-      Reason: { Text: err }
+      Reason: { Text: err.soapText || err.message || err.toString() }
     }
   };
 };
@@ -121,9 +124,13 @@ var server = http.createServer(function(req, res) {
   if (parsedUrl.pathname === '/') {
     res.setHeader('Content-Type', 'application/xml');
 
-    //var tailoredWsdl = wsdl.replace(/{{baseAddress}}/g, 'http://' + req.headers.host);
+    var tailoredWsdl = wsdl;
 
-    res.write(wsdl);
+    if (!process.env.BASE_ADDRESS) {
+      tailoredWsdl = rawWsdl.replace(/{{baseAddress}}/g, 'http://' + req.headers.host);
+    }
+
+    res.write(tailoredWsdl);
   } else {
     res.write('404 Not Found: ' + req.url);
   }

@@ -25,7 +25,7 @@
       <complexType name="<%= item.wsdl_name %>Parameters">
         <all>
           <% _.forEach(item.parameters_schema, function(parameter, name) { %>
-          <element name="<%= parameter.wsdl_name %>" type="<%= parameter.wsdl_type_ns_prefix %>:<%= parameter.wsdl_type_name %>" minOccurs="0" maxOccurs="1">
+          <element name="<%= parameter.wsdl_name %>" type="<%= parameter.wsdl_type_ns_prefix %>:<%= parameter.wsdl_type_name %>" <% if (parameter.wsdl_default) { %>default="<%= parameter.wsdl_default %>"<% } %> minOccurs="0" maxOccurs="1">
             <% if (parameter.wsdl_doc) { %>
             <annotation>
               <documentation>
