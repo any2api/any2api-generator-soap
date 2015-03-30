@@ -8,6 +8,7 @@
       <complexType name="instance">
         <sequence>
           <element name="id" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+          <element name="description" type="xsd:string" minOccurs="0" maxOccurs="1"/>
           <element name="status" type="xsd:string" minOccurs="0" maxOccurs="1"/>
           <element name="created" type="xsd:string" minOccurs="0" maxOccurs="1"/>
           <element name="finished" type="xsd:string" minOccurs="0" maxOccurs="1"/>
@@ -104,7 +105,7 @@
     </operation>
   </portType>
 
-  <binding name="<%= item.wsdl_name %>SoapBinding" type="tns:<%= item.wsdl_name %>PortType">
+  <binding name="<%= item.wsdl_name %>Soap" type="tns:<%= item.wsdl_name %>PortType">
     <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
     <operation name="invoke">
       <SOAP:operation style="rpc"/>
@@ -125,7 +126,7 @@
   <% if (!_.isEmpty(invokers)) { %>
   <service name="invokers">
     <% _.forEach(invokers, function(invoker, name) { %>
-    <port name="<%= invoker.wsdl_name %>" binding="tns:<%= invoker.wsdl_name %>SoapBinding">
+    <port name="<%= invoker.wsdl_name %>" binding="tns:<%= invoker.wsdl_name %>Soap">
       <SOAP:address location="{{baseAddress}}/invokers/<%= invoker.wsdl_name %>"/>
     </port>
     <% }); %>
@@ -135,7 +136,7 @@
   <% if (!_.isEmpty(executables)) { %>
   <service name="executables">
     <% _.forEach(executables, function(executable, name) { %>
-    <port name="<%= executable.wsdl_name %>" binding="tns:<%= executable.wsdl_name %>SoapBinding">
+    <port name="<%= executable.wsdl_name %>" binding="tns:<%= executable.wsdl_name %>Soap">
       <SOAP:address location="{{baseAddress}}/executables/<%= executable.wsdl_name %>"/>
     </port>
     <% }); %>
