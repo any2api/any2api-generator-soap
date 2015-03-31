@@ -30,7 +30,7 @@
             <% if (parameter.wsdl_doc) { %>
             <annotation>
               <documentation>
-                <![CDATA[<%= parameter.wsdl_doc.trim() %>]]>
+                <![CDATA[<%= parameter.wsdl_doc %>]]>
               </documentation>
             </annotation>
             <% } %>
@@ -45,7 +45,7 @@
             <% if (result.wsdl_doc) { %>
             <annotation>
               <documentation>
-                <![CDATA[<%= result.wsdl_doc.trim() %>]]>
+                <![CDATA[<%= result.wsdl_doc %>]]>
               </documentation>
             </annotation>
             <% } %>
@@ -73,7 +73,7 @@
   
   <% if (implementation.wsdl_doc) { %>
   <documentation>
-    <![CDATA[<%= implementation.wsdl_doc.trim() %>]]>
+    <![CDATA[<%= implementation.wsdl_doc %>]]>
   </documentation>
   <% } %>
 
