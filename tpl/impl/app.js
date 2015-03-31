@@ -15,7 +15,7 @@ var util = require('any2api-util');
 
 
 var port = process.env.PORT || 3000;
-var baseAddress = process.env.BASE_ADDRESS || 'http://localhost:' + port;
+var baseAddress = process.env.BASE_ADDRESS || 'http://0.0.0.0:' + port;
 var timeout = process.env.TIMEOUT || 5 * 60 * 1000; // 5mins
 
 
@@ -168,8 +168,8 @@ util.readInput({ specPath: path.join(__dirname, 'apispec.json') }, function(err,
       });
 
       var port = {};
-      port[collection] = {};
-      port[collection][item.wsdl_name] = {
+      port[item.wsdl_service_name] = {};
+      port[item.wsdl_service_name][item.wsdl_port_name] = {
         invoke: _.bind(function(input, callback, headers) {
           debug('wsdl_name', item.wsdl_name);
           debug('input', input);
@@ -189,7 +189,7 @@ util.readInput({ specPath: path.join(__dirname, 'apispec.json') }, function(err,
         }, context)
       };
 
-      soap.listen(server, '/' + collection + '/' + item.wsdl_name, port, wsdl);
+      soap.listen(server, '/' + item.wsdl_service_name + '/' + item.wsdl_port_name, port, wsdl);
     });
   });
 

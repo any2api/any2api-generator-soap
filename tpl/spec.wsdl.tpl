@@ -97,7 +97,7 @@
     <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
   </message>
 
-  <portType name="<%= item.wsdl_name %>PortType">
+  <portType name="<%= item.wsdl_porttype_name %>">
     <operation name="invoke">
       <input message="tns:<%= item.wsdl_name %>InvokeInput"/>
       <output message="tns:<%= item.wsdl_name %>InvokeOutput"/>
@@ -105,7 +105,7 @@
     </operation>
   </portType>
 
-  <binding name="<%= item.wsdl_name %>Soap" type="tns:<%= item.wsdl_name %>PortType">
+  <binding name="<%= item.wsdl_soapbinding_name %>" type="tns:<%= item.wsdl_porttype_name %>">
     <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
     <operation name="invoke">
       <SOAP:operation style="rpc"/>
@@ -123,23 +123,11 @@
   </binding>
   <% }); %>
 
-  <% if (!_.isEmpty(invokers)) { %>
-  <service name="invokers">
-    <% _.forEach(invokers, function(invoker, name) { %>
-    <port name="<%= invoker.wsdl_name %>" binding="tns:<%= invoker.wsdl_name %>Soap">
-      <SOAP:address location="{{baseAddress}}/invokers/<%= invoker.wsdl_name %>"/>
+  <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
+  <service name="<%= item.wsdl_service_name %>">
+    <port name="<%= item.wsdl_port_name %>" binding="tns:<%= item.wsdl_soapbinding_name %>">
+      <SOAP:address location="{{baseAddress}}/<%= item.wsdl_service_name %>/<%= item.wsdl_port_name %>"/>
     </port>
-    <% }); %>
   </service>
-  <% } %>
-
-  <% if (!_.isEmpty(executables)) { %>
-  <service name="executables">
-    <% _.forEach(executables, function(executable, name) { %>
-    <port name="<%= executable.wsdl_name %>" binding="tns:<%= executable.wsdl_name %>Soap">
-      <SOAP:address location="{{baseAddress}}/executables/<%= executable.wsdl_name %>"/>
-    </port>
-    <% }); %>
-  </service>
-  <% } %>
+  <% }); %>
 </definitions>

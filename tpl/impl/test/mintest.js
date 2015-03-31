@@ -35,7 +35,7 @@ var options = {
 describe('minimum test', function() {
   this.timeout(process.env.TIMEOUT);
 
-  var executableNames = [];
+  var endpoints = [];
 
   before('get executables', function(done) {
     fs.readFile(path.resolve(__dirname, '..', 'apispec.json'), 'utf8', function(err, content) {
@@ -44,7 +44,7 @@ describe('minimum test', function() {
       var apiSpec = JSON.parse(content);
 
       _.each(apiSpec.executables, function(executable, name) {
-        executableNames.push(executable.wsdl_name);
+        endpoints.push({ service: executable.wsdl_service_name, port: executable.wsdl_port_name });
       });
 
       done();
@@ -53,10 +53,10 @@ describe('minimum test', function() {
 
   it('run executables with default parameters', function(done) {
     if (appListening) {
-      performRequests(executableNames, done);
+      performRequests(endpoints, done);
     } else {
       app.on('listening', function() {
-        performRequests(executableNames, done);
+        performRequests(endpoints, done);
       });
     }
   });
@@ -72,10 +72,10 @@ describe('minimum test', function() {
 
 
 
-var performRequests = function(executableNames, done) {
-  async.eachSeries(executableNames, function(name, done) {
+var performRequests = function(endpoints, done) {
+  async.eachSeries(endpoints, function(endpoint, done) {
     soap.createClient(baseUrl, options, function(err, client) {
-      client.executables[name].invoke(input, function(err, output) {
+      client[endpoint.service][endpoint.port].invoke(input, function(err, output) {
         if (err) return done(err);
 
         console.log(output);
