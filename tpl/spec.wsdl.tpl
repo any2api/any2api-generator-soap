@@ -82,11 +82,11 @@
     <part name="error" type="xsd:string"/>
   </message> -->
 
-  <% _.forEach(_.map(invokers, function(invoker, name) { invoker.name = name; invoker.kind = 'invoker'; return invoker; }).concat(_.map(executables, function(executable, name) { executable.name = name; executable.kind = 'executable'; return executable; })), function(item) { %>
+  <% _.forEach(_.map(invokers, function(invoker, name) { invoker.invoker = true; return invoker; }).concat(_.map(executables)), function(item) { %>
   <message name="<%= item.wsdl_name %>InvokeInput">
     <part name="parameters" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Parameters"/>
 
-    <% if (item.kind === 'invoker') { %>
+    <% if (item.invoker) { %>
     <part name="executable" type="<%= implementation.wsdl_ns_prefix %>:executable"/>
     <% } %>
   </message>

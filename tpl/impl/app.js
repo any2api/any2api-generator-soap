@@ -25,8 +25,7 @@ var wsdl = rawWsdl.replace(/{{baseAddress}}/g, baseAddress);
 
 var apiSpec;
 
-//TODO: replace by Redis store
-var instances = {};
+//TODO: use any2api-instancedb-redis
 
 
 
@@ -54,7 +53,7 @@ var invoke = function(input, executableName, invokerName, callback) {
       try {
         instance.parameters[name] = JSON.parse(value);
       } catch (err) {
-        err.soapText = 'Parameter value ' + name + 'is not valid JSON: ';
+        err.soapText = 'Parameter value ' + name + ' is not valid JSON: ';
         err.soapText += err.message || err.toString();
 
         return callback(err);
@@ -88,6 +87,8 @@ var invoke = function(input, executableName, invokerName, callback) {
         
         if (S(resultDef.type).toLowerCase().contains('json')) {
           output.results[wsdlName] = JSON.stringify(value, null, 2);
+        } else if (S(resultDef.type).toLowerCase().contains('byte') && Buffer.isBuffer(value)) {
+          output.results[wsdlName] = value.toString('base64');
         } else {
           output.results[wsdlName] = value;
         }
