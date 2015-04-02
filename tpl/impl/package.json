@@ -2,7 +2,7 @@
   "name": "soap-node-api-impl",
   "version": "1.0.0",
   "scripts": {
-    "prepare-runtime": "npm install -s && export IMPL_DIR=`pwd` && for INVOKER_DIR in ./invokers/*; do cd $IMPL_DIR; cd $INVOKER_DIR; npm run prepare-runtime; done",
+    "prepare-runtime": "npm install --loglevel error && export IMPL_DIR=`pwd` && for INVOKER_DIR in ./invokers/*; do cd $IMPL_DIR; cd $INVOKER_DIR; npm run prepare-runtime; done",
     "start": "node ./app.js",
     "test": "mocha",
     "smoketest": "mocha smoketest"
