@@ -126,7 +126,7 @@
   <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <service name="<%= item.wsdl_service_name %>">
     <port name="<%= item.wsdl_port_name %>" binding="tns:<%= item.wsdl_soapbinding_name %>">
-      <SOAP:address location="{{baseAddress}}/<%= item.wsdl_service_name %>/<%= item.wsdl_port_name %>"/>
+      <SOAP:address location="{{baseAddress}}/<%= item.wsdl_url_path %>"/>
     </port>
   </service>
   <% }); %>

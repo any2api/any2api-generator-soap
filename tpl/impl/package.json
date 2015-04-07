@@ -1,5 +1,5 @@
 {
-  "name": "soap-node-api-impl",
+  "name": "soap-api-impl",
   "version": "1.0.0",
   "scripts": {
     "prepare-runtime": "npm install --loglevel error && export IMPL_DIR=`pwd` && for INVOKER_DIR in ./invokers/*; do cd $IMPL_DIR; cd $INVOKER_DIR; npm run prepare-runtime; done",

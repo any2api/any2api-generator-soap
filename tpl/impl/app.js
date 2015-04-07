@@ -12,6 +12,12 @@ var soap = require('soap');
 
 var util = require('any2api-util');
 
+var preInvokeCode = process.env.PRE_INVOKE || '';
+var preInvokeTplPath = path.join(__dirname, 'pre-invoke.js.tpl');
+var preInvokeScrPath = path.join(__dirname, 'pre-invoke.js');
+fs.writeFileSync(preInvokeScrPath, _.template(fs.readFileSync(preInvokeTplPath, 'utf8'))({ code: preInvokeCode }), 'utf8');
+var preInvoke = require('./pre-invoke');
+
 
 
 var port = process.env.PORT || 3000;
@@ -36,8 +42,10 @@ var invoke = function(input, executableName, invokerName, callback) {
   instance.id = uuid.v4();
   instance.parameters = {};
 
-  var item = apiSpec.executables[executableName];
-  if (!item) item = apiSpec.invokers[invokerName];
+  var executable = apiSpec.executables[executableName];
+  var invoker = apiSpec.invokers[invokerName];
+
+  var item = executable || invoker;
 
   //TODO: run util.persistEmbeddedExecutable _if_ invokerName && input.executable
 
@@ -66,38 +74,44 @@ var invoke = function(input, executableName, invokerName, callback) {
   }, function(err) {
     if (err) return callback(err);
 
-    debug('instance', instance);
-
-    // Invoke executable
-    util.invokeExecutable({ apiSpec: apiSpec,
-                            instance: instance,
-                            executable_name: executableName,
-                            invoker_name: invokerName }, function(err, instance) {
+    preInvoke(instance, executable, invoker, function(err, instance) {
       if (err) return callback(err);
 
-      // Map results
-      var output = { instance: instance, results: {} };
+      debug('instance', instance);
 
-      _.each(instance.results, function(value, name) {
-        var resultDef = item.results_schema[name];
+      // Invoke executable
+      util.invokeExecutable({ apiSpec: apiSpec,
+                              instance: instance,
+                              executable_name: executableName,
+                              invoker_name: invokerName }, function(err, instance) {
+        if (err) return callback(err);
 
-        if (!resultDef) return;
+        //TODO: we're affected by this bug: https://github.com/vpulim/node-soap/issues/613
 
-        var wsdlName = item.results_schema[name].wsdl_name;
-        
-        if (S(resultDef.type).toLowerCase().contains('json')) {
-          output.results[wsdlName] = JSON.stringify(value, null, 2);
-        } else if (S(resultDef.type).toLowerCase().contains('byte') && Buffer.isBuffer(value)) {
-          output.results[wsdlName] = value.toString('base64');
-        } else {
-          output.results[wsdlName] = value;
-        }
+        // Map results
+        var output = { instance: instance, results: {} };
+
+        _.each(instance.results, function(value, name) {
+          var resultDef = item.results_schema[name];
+
+          if (!resultDef) return;
+
+          var wsdlName = item.results_schema[name].wsdl_name;
+          
+          if (S(resultDef.type).toLowerCase().contains('json')) {
+            output.results[wsdlName] = JSON.stringify(value, null, 2);
+          } else if (S(resultDef.type).toLowerCase().contains('binary') && Buffer.isBuffer(value)) {
+            output.results[wsdlName] = value.toString('base64');
+          } else {
+            output.results[wsdlName] = value;
+          }
+        });
+
+        delete instance.parameters;
+        delete instance.results;
+
+        callback(null, output);
       });
-
-      delete instance.parameters;
-      delete instance.results;
-
-      callback(null, output);
     });
   });
 };
@@ -190,7 +204,7 @@ util.readInput({ specPath: path.join(__dirname, 'apispec.json') }, function(err,
         }, context)
       };
 
-      soap.listen(server, '/' + item.wsdl_service_name + '/' + item.wsdl_port_name, port, wsdl);
+      soap.listen(server, '/' + item.wsdl_url_path, port, wsdl);
     });
   });
 
