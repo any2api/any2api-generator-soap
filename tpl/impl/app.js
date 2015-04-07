@@ -87,6 +87,7 @@ var invoke = function(input, executableName, invokerName, callback) {
         if (err) return callback(err);
 
         //TODO: we're affected by this bug: https://github.com/vpulim/node-soap/issues/613
+        //      errors that occur here are not sent back to the client as SOAP faults
 
         // Map results
         var output = { instance: instance, results: {} };
