@@ -93,16 +93,17 @@ var invoke = function(input, executableName, invokerName, callback) {
         var output = { instance: instance, results: {} };
 
         _.each(instance.results, function(value, name) {
-          var resultDef = item.results_schema[name];
+          var resultDef = item.results_schema[name] || {};
+          resultDef.type = resultDef.type || '';
 
-          if (!resultDef) return;
-
-          var wsdlName = item.results_schema[name].wsdl_name;
+          var wsdlName = resultDef.wsdl_name || S(name).camelize().stripPunctuation().s;
           
           if (S(resultDef.type).toLowerCase().contains('json')) {
             output.results[wsdlName] = JSON.stringify(value, null, 2);
           } else if (S(resultDef.type).toLowerCase().contains('binary') && Buffer.isBuffer(value)) {
             output.results[wsdlName] = value.toString('base64');
+          } else if (S(resultDef.type).toLowerCase().contains('xml')) {
+            output.results[wsdlName]['$xml'] = value;
           } else {
             output.results[wsdlName] = value;
           }

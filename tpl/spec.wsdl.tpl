@@ -24,7 +24,7 @@
 
       <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
       <complexType name="<%= item.wsdl_name %>Parameters">
-        <all>
+        <sequence>
           <% _.forEach(item.parameters_schema, function(parameter, name) { %>
           <element name="<%= parameter.wsdl_name %>" type="<%= parameter.wsdl_type_ns_prefix %>:<%= parameter.wsdl_type_name %>" <% if (parameter.wsdl_default) { %>default="<%= parameter.wsdl_default %>"<% } %> minOccurs="0" maxOccurs="1">
             <% if (parameter.wsdl_doc) { %>
@@ -36,10 +36,11 @@
             <% } %>
           </element>
           <% }); %> <!-- TODO: consider paramsRequired -> minOccurs=1 -->
-        </all>
+          <any minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
       </complexType>
       <complexType name="<%= item.wsdl_name %>Results">
-        <all>
+        <sequence>
           <% _.forEach(item.results_schema, function(result, name) { %>
           <element name="<%= result.wsdl_name %>" type="<%= result.wsdl_type_ns_prefix %>:<%= result.wsdl_type_name %>" minOccurs="0" maxOccurs="1">
             <% if (result.wsdl_doc) { %>
@@ -51,7 +52,8 @@
             <% } %>
           </element>
           <% }); %>
-        </all>
+          <any minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
       </complexType>
       <% _.forEach(item.parameters_schema, function(parameter, name) {
            if (parameter.xml_schema) { %>
