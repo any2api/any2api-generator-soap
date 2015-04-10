@@ -9,6 +9,7 @@ var pkg = require('./package.json');
 var debug = require('debug')(pkg.name);
 var http = require('http');
 var soap = require('soap');
+var shortId = require('shortid');
 
 var util = require('any2api-util');
 
@@ -100,7 +101,9 @@ var invoke = function(input, executableName, invokerName, callback) {
           //wsdlName = S(name).camelize().replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').s;
           //if (S(wsdlName).startsWith('_')) wsdlName = wsdlName.substring(1);
           //name.replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ');
-          
+
+          if (output.results[wsdlName]) wsdlName += '_' + shortId.generate();
+
           if (S(resultDef.type).toLowerCase().contains('json')) {
             output.results[wsdlName] = { '$value': JSON.stringify(value, null, 2) };
           } else if (S(resultDef.type).toLowerCase().contains('binary') && Buffer.isBuffer(value)) {
