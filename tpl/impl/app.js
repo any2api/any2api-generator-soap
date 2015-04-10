@@ -97,16 +97,21 @@ var invoke = function(input, executableName, invokerName, callback) {
           resultDef.type = resultDef.type || '';
 
           var wsdlName = resultDef.wsdl_name || S(name).camelize().stripPunctuation().s;
+          //wsdlName = S(name).camelize().replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').s;
+          //if (S(wsdlName).startsWith('_')) wsdlName = wsdlName.substring(1);
+          //name.replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ');
           
           if (S(resultDef.type).toLowerCase().contains('json')) {
-            output.results[wsdlName] = JSON.stringify(value, null, 2);
+            output.results[wsdlName] = { '$value': JSON.stringify(value, null, 2) };
           } else if (S(resultDef.type).toLowerCase().contains('binary') && Buffer.isBuffer(value)) {
-            output.results[wsdlName] = value.toString('base64');
+            output.results[wsdlName] = { '$value': value.toString('base64') };
           } else if (S(resultDef.type).toLowerCase().contains('xml')) {
-            output.results[wsdlName]['$xml'] = value;
+            output.results[wsdlName] = { '$xml': value };
           } else {
-            output.results[wsdlName] = value;
+            output.results[wsdlName] = { '$value': value };
           }
+
+          output.results[wsdlName].attributes = { resultName: _.escape(name) };
         });
 
         delete instance.parameters;

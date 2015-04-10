@@ -15,6 +15,7 @@
           <element name="failed" type="xsd:string" minOccurs="0" maxOccurs="1"/>
 
           <any minOccurs="0" maxOccurs="unbounded"/>
+          <anyAttribute/>
         </sequence>
       </complexType>
 
@@ -37,6 +38,7 @@
           </element>
           <% }); %> <!-- TODO: consider paramsRequired -> minOccurs=1 -->
           <any minOccurs="0" maxOccurs="unbounded"/>
+          <anyAttribute/>
         </sequence>
       </complexType>
       <complexType name="<%= item.wsdl_name %>Results">
@@ -53,6 +55,7 @@
           </element>
           <% }); %>
           <any minOccurs="0" maxOccurs="unbounded"/>
+          <anyAttribute/>
         </sequence>
       </complexType>
       <% _.forEach(item.parameters_schema, function(parameter, name) {
