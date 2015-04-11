@@ -6,17 +6,7 @@
       <import namespace="http://www.w3.org/2003/05/soap-encoding"/>
 
       <complexType name="instance">
-        <sequence>
-          <element name="id" type="xsd:string" minOccurs="0" maxOccurs="1"/>
-          <element name="description" type="xsd:string" minOccurs="0" maxOccurs="1"/>
-          <element name="status" type="xsd:string" minOccurs="0" maxOccurs="1"/>
-          <element name="created" type="xsd:string" minOccurs="0" maxOccurs="1"/>
-          <element name="finished" type="xsd:string" minOccurs="0" maxOccurs="1"/>
-          <element name="failed" type="xsd:string" minOccurs="0" maxOccurs="1"/>
-
-          <any minOccurs="0" maxOccurs="unbounded"/>
-          <anyAttribute/>
-        </sequence>
+        <%= instanceTypeDef %>
       </complexType>
 
       <complexType name="executable">
@@ -37,9 +27,9 @@
             <% } %>
           </element>
           <% }); %> <!-- TODO: consider paramsRequired -> minOccurs=1 -->
-          <any minOccurs="0" maxOccurs="unbounded"/>
-          <anyAttribute/>
+          <any minOccurs="0" maxOccurs="unbounded" namespace="##targetNamespace"/>
         </sequence>
+        <anyAttribute/>
       </complexType>
       <complexType name="<%= item.wsdl_name %>Results">
         <sequence>
@@ -54,9 +44,9 @@
             <% } %>
           </element>
           <% }); %>
-          <any minOccurs="0" maxOccurs="unbounded"/>
-          <anyAttribute/>
+          <any minOccurs="0" maxOccurs="unbounded" namespace="##targetNamespace"/>
         </sequence>
+        <anyAttribute/>
       </complexType>
       <% _.forEach(item.parameters_schema, function(parameter, name) {
            if (parameter.xml_schema) { %>
