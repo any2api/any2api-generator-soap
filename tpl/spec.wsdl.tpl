@@ -79,6 +79,8 @@
 
   <% _.forEach(_.map(invokers, function(invoker, name) { invoker.invoker = true; return invoker; }).concat(_.map(executables)), function(item) { %>
   <message name="<%= item.wsdl_name %>InvokeInput">
+    <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
+
     <part name="parameters" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Parameters"/>
 
     <% if (item.invoker) { %>
@@ -87,9 +89,9 @@
   </message>
 
   <message name="<%= item.wsdl_name %>InvokeOutput">
-    <part name="results" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Results"/>
-
     <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
+
+    <part name="results" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Results"/>
   </message>
 
   <portType name="<%= item.wsdl_porttype_name %>">

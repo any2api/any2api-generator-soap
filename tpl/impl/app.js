@@ -23,7 +23,7 @@ var preInvoke = require('./pre-invoke');
 
 var port = process.env.PORT || 3000;
 var baseAddress = process.env.BASE_ADDRESS || 'http://0.0.0.0:' + port;
-var timeout = process.env.TIMEOUT || 5 * 60 * 1000; // 5mins
+var timeout = process.env.TIMEOUT || 20 * 60 * 1000; // 20mins
 
 
 
@@ -84,7 +84,8 @@ var invoke = function(input, executableName, invokerName, callback) {
       util.invokeExecutable({ apiSpec: apiSpec,
                               instance: instance,
                               executable_name: executableName,
-                              invoker_name: invokerName }, function(err, instance) {
+                              invoker_name: invokerName,
+                              timeout: instance.timeout || timeout }, function(err, instance) {
         if (err) return callback(err);
 
         //TODO: we're affected by this bug: https://github.com/vpulim/node-soap/issues/613
@@ -106,7 +107,7 @@ var invoke = function(input, executableName, invokerName, callback) {
 
           if (S(resultDef.type).toLowerCase().contains('json')) {
             output.results[wsdlName] = { '$value': JSON.stringify(value, null, 2) };
-          } else if (S(resultDef.type).toLowerCase().contains('binary') && Buffer.isBuffer(value)) {
+          } else if (/*S(resultDef.type).toLowerCase().contains('binary') &&*/ Buffer.isBuffer(value)) {
             output.results[wsdlName] = { '$value': value.toString('base64') };
           } else if (S(resultDef.type).toLowerCase().contains('xml')) {
             output.results[wsdlName] = { '$xml': value };
