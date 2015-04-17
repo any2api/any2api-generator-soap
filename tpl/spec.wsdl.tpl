@@ -80,9 +80,7 @@
   <% _.forEach(_.map(invokers, function(invoker, name) { invoker.invoker = true; return invoker; }).concat(_.map(executables)), function(item) { %>
   <message name="<%= item.wsdl_name %>InvokeInput">
     <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
-
     <part name="parameters" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Parameters"/>
-
     <% if (item.invoker) { %>
     <part name="executable" type="<%= implementation.wsdl_ns_prefix %>:executable"/>
     <% } %>
@@ -90,7 +88,6 @@
 
   <message name="<%= item.wsdl_name %>InvokeOutput">
     <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
-
     <part name="results" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Results"/>
   </message>
 
@@ -107,7 +104,7 @@
     <operation name="invoke">
       <SOAP:operation style="rpc"/>
       <input>
-        <!-- <SOAP:body use="encoded" namespace="<%= implementation.wsdl_ns %>" encodingStyle="http://www.w3.org/2003/05/soap-encoding"/> -->
+        <!-- <SOAP:body use="encoded" namespace="< % = implementation.wsdl_ns % >" encodingStyle="http://www.w3.org/2003/05/soap-encoding"/> -->
         <SOAP:body use="literal"/>
       </input>
       <output>
