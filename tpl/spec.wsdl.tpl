@@ -9,6 +9,10 @@
         <%= instanceTypeDef %>
       </complexType>
 
+      <complexType name="instanceWritable">
+        <%= instanceWritableTypeDef %>
+      </complexType>
+
       <complexType name="executable">
         <%= executableTypeDef %>
       </complexType>
@@ -79,7 +83,7 @@
 
   <% _.forEach(_.map(invokers, function(invoker, name) { invoker.invoker = true; return invoker; }).concat(_.map(executables)), function(item) { %>
   <message name="<%= item.wsdl_name %>InvokeInput">
-    <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
+    <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instanceWritable"/>
     <part name="parameters" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Parameters"/>
     <% if (item.invoker) { %>
     <part name="executable" type="<%= implementation.wsdl_ns_prefix %>:executable"/>
