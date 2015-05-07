@@ -41,88 +41,120 @@ var invoke = function(input, executableName, invokerName, callback) {
 
   var instance = input.instance || {};
   instance.id = uuid.v4();
-  instance.parameters = {};
+  instance.timeout = instance.timeout || timeout;
+
+  var parameters = {};
+
+  var paramsStream = null;
+  var resultsStream = util.throughStream({ objectMode: true });
 
   var executable = apiSpec.executables[executableName];
   var invoker = apiSpec.invokers[invokerName];
 
   var item = executable || invoker;
 
-  //TODO: run util.persistEmbeddedExecutable _if_ invokerName && input.executable
+  var output = { instance: instance, results: {} };
 
-  // Map parameters
-  async.eachSeries(_.keys(input.parameters), function(wsdlName, callback) {
-    var name = item.wsdlParamsMap[wsdlName];
-    var value = input.parameters[wsdlName];
-    var paramDef = item.parameters_schema[name];
+  async.series([
+    function(callback) {
+      // Map parameters
+      async.eachSeries(_.keys(input.parameters), function(wsdlName, callback) {
+        if (input.parameters[wsdlName] && input.parameters[wsdlName]['$value']) {
+          input.parameters[wsdlName] = input.parameters[wsdlName]['$value'];
+        }
 
-    if (!paramDef) return callback();
-    
-    if (S(paramDef.type).toLowerCase().contains('json')) {
-      try {
-        instance.parameters[name] = JSON.parse(value);
-      } catch (err) {
-        err.soapText = 'Parameter value ' + name + ' is not valid JSON: ';
-        err.soapText += err.message || err.toString();
+        var name = item.wsdlParamsMap[wsdlName];
+        var value = input.parameters[wsdlName];
+        var paramDef = item.parameters_schema[name];
 
-        return callback(err);
-      }
-    } else {
-      instance.parameters[name] = value;
-    }
+        if (!paramDef) return callback();
+        
+        if (S(paramDef.type).toLowerCase().contains('json')) {
+          try {
+            parameters[name] = JSON.parse(value);
+          } catch (err) {
+            err.soapText = 'Parameter value ' + name + ' is not valid JSON: ';
+            err.soapText += err.message || err.toString();
 
-    callback();
-  }, function(err) {
-    if (err) return callback(err);
-
-    preInvoke(instance, executable, invoker, function(err, instance) {
-      if (err) return callback(err);
-
-      debug('instance', instance);
-
-      // Invoke executable
-      util.invokeExecutable({ apiSpec: apiSpec,
-                              instance: instance,
-                              executable_name: executableName,
-                              invoker_name: invokerName,
-                              timeout: instance.timeout || timeout }, function(err, instance) {
-        if (err) return callback(err);
-
-        //TODO: we're affected by this bug: https://github.com/vpulim/node-soap/issues/613
-        //      errors that occur here are not sent back to the client as SOAP faults
-
-        // Map results
-        var output = { instance: instance, results: {} };
-
-        _.each(instance.results, function(value, name) {
-          var resultDef = item.results_schema[name] || {};
-          resultDef.type = resultDef.type || '';
-
-          var wsdlName = resultDef.wsdl_name || S(name).camelize().stripPunctuation().s;
-          //wsdlName = S(name).camelize().replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').s;
-          //if (S(wsdlName).startsWith('_')) wsdlName = wsdlName.substring(1);
-          //name.replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ');
-
-          if (output.results[wsdlName]) wsdlName += '_' + shortId.generate();
-
-          if (S(resultDef.type).toLowerCase().contains('json')) {
-            output.results[wsdlName] = { '$value': JSON.stringify(value, null, 2) };
-          } else if (/*S(resultDef.type).toLowerCase().contains('binary') &&*/ Buffer.isBuffer(value)) {
-            output.results[wsdlName] = { '$value': value.toString('base64') };
-          } else if (S(resultDef.type).toLowerCase().contains('xml')) {
-            output.results[wsdlName] = { '$xml': value };
-          } else {
-            output.results[wsdlName] = { '$value': value };
+            return callback(err);
           }
+        } else {
+          parameters[name] = value;
+        }
 
-          output.results[wsdlName].attributes = { resultName: _.escape(name) };
-        });
+        callback();
+      }, callback);
+    },
+    function(callback) {
+      preInvoke(instance, executable, invoker, function(err, inst) {
+        debug('instance', instance);
 
-        delete instance.parameters;
-        delete instance.results;
+        instance = inst;
 
-        callback(null, output);
+        callback(err);
       });
+    },
+    function(callback) {
+      // Build parameters stream
+      util.streamifyParameters({
+        parameters: parameters,
+        parametersSchema: item.parameters_schema,
+        parametersRequired: item.parameters_required
+      }, function(err, stream) {
+        paramsStream = stream;
+
+        callback(err);
+      });
+    },
+    function(callback) {
+      // Run instance
+      util.runInstance({
+        apiSpec: apiSpec,
+        instance: instance,
+        executable_name: executableName,
+        invoker_name: invokerName,
+        parametersStream: paramsStream,
+        resultsStream: resultsStream
+      }, function(err, inst) {
+        instance = inst;
+
+        callback(err);
+      });
+    }
+  ], function(err) {
+    // Consume results stream
+    util.unstreamifyResults({
+      resultsSchema: item.results_schema,
+      resultsStream: resultsStream
+    }, function(err2, results) {
+      if (err2) console.error(err2);
+
+      // Map results
+      _.each(results, function(value, name) {
+        var resultDef = item.results_schema[name] || {};
+        resultDef.type = resultDef.type || '';
+
+        var wsdlName = resultDef.wsdl_name || S(name).camelize().stripPunctuation().s;
+        //wsdlName = S(name).camelize().replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').s;
+        //if (S(wsdlName).startsWith('_')) wsdlName = wsdlName.substring(1);
+        //name.replace(/\//g, '_').replace(/\\\\/g, '_').replace(/\\/g, '_').replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ');
+
+        if (output.results[wsdlName]) wsdlName += '_' + shortId.generate();
+
+        if (S(resultDef.type).toLowerCase().contains('json')) {
+          output.results[wsdlName] = { '$value': JSON.stringify(value, null, 2) };
+        } else if (/*S(resultDef.type).toLowerCase().contains('binary') &&*/ Buffer.isBuffer(value)) {
+          output.results[wsdlName] = { '$value': value.toString('base64') };
+        } else if (S(resultDef.type).toLowerCase().contains('xml')) {
+          output.results[wsdlName] = { '$xml': value };
+        } else {
+          output.results[wsdlName] = { '$value': value };
+        }
+
+        output.results[wsdlName].attributes = { resultName: _.escape(name) };
+      });
+
+      callback(err, output);
     });
   });
 };
@@ -174,7 +206,7 @@ server.on('error', function(err) {
 
 
 // Read API spec
-util.readInput({ specPath: path.join(__dirname, 'apispec.json') }, function(err, as) {
+util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, as) {
   if (err) throw err;
 
   apiSpec = as;
