@@ -111,8 +111,8 @@ var invoke = function(input, executableName, invokerName, callback) {
       util.runInstance({
         apiSpec: apiSpec,
         instance: instance,
-        executable_name: executableName,
-        invoker_name: invokerName,
+        executableName: executableName,
+        invokerName: invokerName,
         parametersStream: paramsStream,
         resultsStream: resultsStream
       }, function(err, inst) {
