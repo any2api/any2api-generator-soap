@@ -3,7 +3,7 @@
 
   <types>
     <schema xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope" xmlns:SOAP-ENC="http://www.w3.org/2003/05/soap-encoding" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:<%= implementation.wsdl_ns_prefix %>="<%= implementation.wsdl_ns %>" xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="<%= implementation.wsdl_ns %>" elementFormDefault="unqualified" attributeFormDefault="unqualified">
-      <import namespace="http://www.w3.org/2003/05/soap-encoding"/>
+      <!-- <import namespace="http://www.w3.org/2003/05/soap-encoding"/> -->
 
       <complexType name="instance">
         <%= instanceTypeDef %>
