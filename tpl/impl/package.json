@@ -8,17 +8,17 @@
     "smoketest": "mocha smoketest"
   },
   "dependencies": {
-    "soap": "~0.8.0",
-    "debug": "~2.0.0",
-    "uuid": "~2.0.0",
-    "lodash": "~2.4.0",
-    "async": "~0.9.0",
-    "string": "~2.2.0",
-    "shortid": "~2.1.3",
+    "soap": "~0.13.0",
+    "debug": "~2.2.0",
+    "uuid": "~2.0.1",
+    "lodash": "~4.6.1",
+    "string": "~3.3.1",
+    "async": "~1.5.2",
+    "shortid": "~2.2.4",
     "any2api-util": "*" 
   },
   "devDependencies": {
-    "mocha": "~1.21.4",
-    "chai": "~1.9.1"
+    "mocha": "~2.4.5",
+    "chai": "~3.5.0"
   }
 }

@@ -2,9 +2,9 @@ var path = require('path');
 var url = require('url');
 var fs = require('fs');
 var uuid = require('uuid');
-var S = require('string');
 var async = require('async');
 var _ = require('lodash');
+var S = require('string');
 var pkg = require('./package.json');
 var debug = require('debug')(pkg.name);
 var http = require('http');
@@ -68,8 +68,10 @@ var invoke = function(input, executableName, invokerName, callback) {
         var paramDef = item.parameters_schema[name];
 
         if (!paramDef) return callback();
-        
-        if (S(paramDef.type).toLowerCase().contains('json')) {
+
+        paramDef.type = paramDef.type || '';
+
+        if (_.includes(paramDef.type.toLowerCase(), 'json')) {
           try {
             parameters[name] = JSON.parse(value);
           } catch (err) {
@@ -141,11 +143,11 @@ var invoke = function(input, executableName, invokerName, callback) {
 
         if (output.results[wsdlName]) wsdlName += '_' + shortId.generate();
 
-        if (S(resultDef.type).toLowerCase().contains('json')) {
+        if (_.includes(resultDef.type.toLowerCase(), 'json')) {
           output.results[wsdlName] = { '$value': JSON.stringify(value, null, 2) };
-        } else if (/*S(resultDef.type).toLowerCase().contains('binary') &&*/ Buffer.isBuffer(value)) {
+        } else if (/*_.includes(resultDef.type.toLowerCase(), 'binary') &&*/ Buffer.isBuffer(value)) {
           output.results[wsdlName] = { '$value': value.toString('base64') };
-        } else if (S(resultDef.type).toLowerCase().contains('xml')) {
+        } else if (_.includes(resultDef.type.toLowerCase(), 'xml')) {
           output.results[wsdlName] = { '$xml': value };
         } else {
           output.results[wsdlName] = { '$value': value };
