@@ -21,8 +21,8 @@ var preInvoke = require('./pre-invoke');
 
 
 
-var port = process.env.PORT || 3000;
-var baseAddress = process.env.BASE_ADDRESS || 'http://0.0.0.0:' + port;
+var soapPort = process.env.PORT || 3000;
+var baseAddress = process.env.BASE_ADDRESS || 'http://0.0.0.0:' + soapPort;
 var timeout = process.env.TIMEOUT || 20 * 60 * 1000; // 20mins
 
 
@@ -40,7 +40,7 @@ var invoke = function(input, executableName, invokerName, callback) {
   input = input || {};
 
   var instance = input.instance || {};
-  instance.id = uuid.v4();
+  instance.id = instance.id || uuid.v4();
   instance.timeout = instance.timeout || timeout;
 
   var parameters = {};
@@ -182,17 +182,19 @@ var server = http.createServer(function(req, res) {
   var parsedUrl = url.parse(req.url);
 
   if (parsedUrl.pathname === '/') {
-    res.setHeader('Content-Type', 'application/xml');
+    res.writeHead(200, { 'Content-Type': 'application/xml' });
 
     var tailoredWsdl = wsdl;
 
-    if (!process.env.BASE_ADDRESS) {
+    if (!process.env.SOAP_BASE_ADDRESS) {
       tailoredWsdl = rawWsdl.replace(/{{baseAddress}}/g, 'http://' + req.headers.host);
     }
 
     res.write(tailoredWsdl);
   } else {
-    res.write('404 Not Found: ' + req.url);
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+
+    res.write('Not Found: ' + req.url);
   }
 
   res.end();
@@ -231,21 +233,47 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
       port[item.wsdl_service_name] = {};
       port[item.wsdl_service_name][item.wsdl_port_name] = {
         invoke: _.bind(function(input, callback, headers) {
-          debug('wsdl_name', item.wsdl_name);
-          debug('input', input);
-          debug('context', this);
+          debug('invoke', 'wsdl_name', item.wsdl_name);
+          debug('invoke', 'input', input);
+          debug('invoke', 'context', this);
+
+          input = input || {};
 
           invoke(input, this.executableName, this.invokerName, function(err, output) {
-            if (err) {
-              err = toSoapError(err);
+            if (err) throw toSoapError(err);
 
-              throw err;
-            }
-
-            debug('output', output);
+            debug('invoke', 'output', output);
 
             callback(output);
           });
+        }, context),
+        invokeAsync: _.bind(function(input, callback, headers) {
+          debug('invokeAsync', 'wsdl_name', item.wsdl_name);
+          debug('invokeAsync', 'input', input);
+          debug('invokeAsync', 'context', this);
+
+          input = input || {};
+
+          if (!input.callback) throw toSoapError(new Error('callback URL missing'));
+          else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
+
+          invoke(input, this.executableName, this.invokerName, function(err, output) {
+            if (err) return console.error(err);
+
+            debug('invokeAsync', 'output', output);
+
+            soap.createClient(input.callback + '?wsdl', {
+              endpoint: input.callback
+            }, function(err, client) {
+              if (err) return console.error(err);
+
+              client[item.wsdl_cb_service_name][item.wsdl_cb_port_name](output, function(err, result) {
+                if (err) return console.error(err);
+              });
+            });
+          });
+
+          callback();
         }, context)
       };
 
@@ -253,9 +281,11 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
     });
   });
 
-  server.listen(port, function(err) {
+  server.listen(soapPort, function(err) {
     if (err) throw err;
   });
+
+  console.log('server listening on port ' + soapPort);
 });
 
 

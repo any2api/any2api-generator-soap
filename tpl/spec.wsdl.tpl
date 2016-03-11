@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns:tns="<%= implementation.wsdl_ns %>" xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope" xmlns:SOAP-ENC="http://www.w3.org/2003/05/soap-encoding" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:<%= implementation.wsdl_ns_prefix %>="<%= implementation.wsdl_ns %>" xmlns:SOAP="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:MIME="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:DIME="http://schemas.xmlsoap.org/ws/2002/04/dime/wsdl/" xmlns:WSDL="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" name="<%= implementation.wsdl_ns %>" targetNamespace="<%= implementation.wsdl_ns %>">
+<definitions targetNamespace="<%= implementation.wsdl_ns %>" xmlns:tns="<%= implementation.wsdl_ns %>" xmlns:<%= implementation.wsdl_ns_prefix %>="<%= implementation.wsdl_ns %>" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:MIME="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:DIME="http://schemas.xmlsoap.org/ws/2002/04/dime/wsdl/" xmlns:SOAP="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:WSDL="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" name="<%= implementation.wsdl_name %>">
+  
+  <% if (implementation.wsdl_doc) { %>
+  <documentation>
+    <![CDATA[<%= implementation.wsdl_doc %>]]>
+  </documentation>
+  <% } %>
+
+  <!-- ===== -->
+  <!-- Types -->
+  <!-- ===== -->
 
   <types>
-    <schema xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope" xmlns:SOAP-ENC="http://www.w3.org/2003/05/soap-encoding" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:<%= implementation.wsdl_ns_prefix %>="<%= implementation.wsdl_ns %>" xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="<%= implementation.wsdl_ns %>" elementFormDefault="unqualified" attributeFormDefault="unqualified">
-      <!-- <import namespace="http://www.w3.org/2003/05/soap-encoding"/> -->
+    <schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="<%= implementation.wsdl_ns %>">
+      <!-- <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/> -->
 
       <complexType name="instance">
         <%= instanceTypeDef %>
@@ -67,59 +77,136 @@
       <%   }
          }); %>
       <% }); %>
+
+      <% _.forEach(_.map(invokers, function(invoker, name) { invoker.invoker = true; return invoker; }).concat(_.map(executables)), function(item) { %>
+      <element name="<%= item.wsdl_name %>">
+        <complexType>
+          <sequence>
+            <element name="instance" type="<%= implementation.wsdl_ns_prefix %>:instanceWritable"/>
+            <element name="parameters" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Parameters"/>
+            <% if (item.invoker) { %>
+            <element name="executable" type="<%= implementation.wsdl_ns_prefix %>:executable"/>
+            <% } %>
+          </sequence>
+        </complexType>
+      </element>
+
+      <element name="<%= item.wsdl_name %>Async">
+        <complexType>
+          <sequence>
+            <element name="instance" type="<%= implementation.wsdl_ns_prefix %>:instanceWritable"/>
+            <element name="callback" type="xsd:string"/>
+            <element name="parameters" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Parameters"/>
+            <% if (item.invoker) { %>
+            <element name="executable" type="<%= implementation.wsdl_ns_prefix %>:executable"/>
+            <% } %>
+          </sequence>
+        </complexType>
+      </element>
+
+      <element name="<%= item.wsdl_name %>Response">
+        <complexType>
+          <sequence>
+            <element name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
+            <element name="results" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Results"/>
+          </sequence>
+        </complexType>
+      </element>
+      <% }); %>
+
+      <!-- Empty response -->
+      <!-- <element name="myOpResponse"><complexType/></element> -->
     </schema>
   </types>
-  
-  <% if (implementation.wsdl_doc) { %>
-  <documentation>
-    <![CDATA[<%= implementation.wsdl_doc %>]]>
-  </documentation>
-  <% } %>
+
+  <!-- ======== -->
+  <!-- Messages -->
+  <!-- ======== -->
 
   <!-- SOAP faults: http://web-gmazza.rhcloud.com/blog/entry/asynchronous-web-service-calls -->
-  <!-- <message name="fault">
-    <part name="error" type="xsd:string"/>
-  </message> -->
+  <!-- <message name="fault"><part name="error" type="xsd:string"/></message> -->
 
-  <% _.forEach(_.map(invokers, function(invoker, name) { invoker.invoker = true; return invoker; }).concat(_.map(executables)), function(item) { %>
+  <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <message name="<%= item.wsdl_name %>InvokeInput">
-    <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instanceWritable"/>
-    <part name="parameters" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Parameters"/>
-    <% if (item.invoker) { %>
-    <part name="executable" type="<%= implementation.wsdl_ns_prefix %>:executable"/>
-    <% } %>
+    <part name="<%= item.wsdl_name %>InvokeInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>"/>
   </message>
 
   <message name="<%= item.wsdl_name %>InvokeOutput">
-    <part name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
-    <part name="results" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Results"/>
+    <part name="<%= item.wsdl_name %>InvokeOutput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Response"/>
   </message>
 
+  <message name="<%= item.wsdl_name %>InvokeAsyncInput">
+    <part name="<%= item.wsdl_name %>InvokeAsyncInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Async"/>
+  </message>
+
+  <message name="<%= item.wsdl_name %>OnFinishInput">
+    <part name="<%= item.wsdl_name %>OnFinishInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Response"/>
+  </message>
+  <% }); %>
+
+  <!-- ========== -->
+  <!-- Port Types -->
+  <!-- ========== -->
+
+  <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <portType name="<%= item.wsdl_porttype_name %>">
     <operation name="invoke">
       <input message="tns:<%= item.wsdl_name %>InvokeInput"/>
       <output message="tns:<%= item.wsdl_name %>InvokeOutput"/>
       <!-- <fault message="tns:fault"/> -->
     </operation>
+    <operation name="invokeAsync">
+      <input message="tns:<%= item.wsdl_name %>InvokeAsyncInput"/>
+    </operation>
   </portType>
 
+  <portType name="<%= item.wsdl_cb_porttype_name %>">
+    <operation name="onFinish">
+      <input message="tns:<%= item.wsdl_name %>OnFinishInput"/>
+    </operation>
+  </portType>
+  <% }); %>
+
+  <!-- ======== -->
+  <!-- Bindings -->
+  <!-- ======== -->
+
+  <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <binding name="<%= item.wsdl_soapbinding_name %>" type="tns:<%= item.wsdl_porttype_name %>">
-    <SOAP:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
     <operation name="invoke">
-      <SOAP:operation style="rpc"/>
+      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>/invoke"/>
       <input>
         <!-- <SOAP:body use="encoded" namespace="< % = implementation.wsdl_ns % >" encodingStyle="http://www.w3.org/2003/05/soap-encoding"/> -->
-        <SOAP:body use="literal"/>
+        <SOAP:body use="literal" namespace="<%= implementation.wsdl_ns %>"/>
       </input>
       <output>
-        <SOAP:body use="literal"/>
+        <SOAP:body use="literal" namespace="<%= implementation.wsdl_ns %>"/>
       </output>
-      <!-- <fault>
-        <SOAP:body use="literal"/>
-      </fault> -->
+      <!-- <fault><SOAP:body use="literal" namespace="< % = implementation.wsdl_ns % >"/></fault> -->
+    </operation>
+    <operation name="invokeAsync">
+      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>/invokeAsync"/>
+      <input>
+        <SOAP:body use="literal" namespace="<%= implementation.wsdl_ns %>"/>
+      </input>
+    </operation>
+  </binding>
+
+  <binding name="<%= item.wsdl_cb_soapbinding_name %>" type="tns:<%= item.wsdl_cb_porttype_name %>">
+    <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="onFinish">
+      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>/onFinish"/>
+      <input>
+        <SOAP:body use="literal" namespace="<%= implementation.wsdl_ns %>"/>
+      </input>
     </operation>
   </binding>
   <% }); %>
+
+  <!-- ======== -->
+  <!-- Services -->
+  <!-- ======== -->
 
   <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <service name="<%= item.wsdl_service_name %>">
@@ -127,5 +214,13 @@
       <SOAP:address location="{{baseAddress}}/<%= item.wsdl_url_path %>"/>
     </port>
   </service>
+
+  <!-- This service endpoint has to be provided by the invoker, e.g. a BPEL workflow invoking the service -->
+  <service name="<%= item.wsdl_cb_service_name %>">
+    <port name="<%= item.wsdl_cb_port_name %>" binding="tns:<%= item.wsdl_cb_soapbinding_name %>">
+      <SOAP:address location="http://[HOST]:[PORT]"/>
+    </port>
+  </service>
   <% }); %>
+
 </definitions>
