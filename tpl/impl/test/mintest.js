@@ -59,13 +59,13 @@ describe('minimum test:', function() {
   it('run executables remotely (SSH) with default parameters', function(done) {
     const input = {
       parameters: {
-        invokerConfig: JSON.stringify({
+        invokerConfig: { // JSON.stringify (because this is actually JSON payload)
           access: 'ssh',
           ssh_port: containerPort,
           ssh_host: containerHost,
           ssh_user: testssh.username,
           ssh_private_key: testssh.privateKey
-        })
+        }
       }
     };
 

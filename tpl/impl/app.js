@@ -72,7 +72,7 @@ var invoke = function(input, executableName, invokerName, callback) {
 
         paramDef.type = paramDef.type || '';
 
-        if (_.includes(paramDef.type.toLowerCase(), 'json')) {
+        if (_.includes(paramDef.type.toLowerCase(), 'json') && _.isString(value)) {
           try {
             parameters[name] = JSON.parse(value);
           } catch (err) {
