@@ -1,34 +1,35 @@
-var path = require('path');
-var url = require('url');
-var fs = require('fs');
-var uuid = require('uuid');
-var async = require('async');
-var _ = require('lodash');
-var S = require('string');
-var pkg = require('./package.json');
-var debug = require('debug')(pkg.name);
-var http = require('http');
-var soap = require('soap');
-var shortId = require('shortid');
+const path = require('path');
+const url = require('url');
+const fs = require('fs');
+const uuid = require('uuid');
+const async = require('async');
+const _ = require('lodash');
+const S = require('string');
+const pkg = require('./package.json');
+const debug = require('debug')(pkg.name);
+const http = require('http');
+const soap = require('soap');
+const shortId = require('shortid');
 
-var util = require('any2api-util');
+const util = require('any2api-util');
 
-var preInvokeCode = process.env.PRE_INVOKE || '';
-var preInvokeTplPath = path.join(__dirname, 'pre-invoke.js.tpl');
-var preInvokeScrPath = path.join(__dirname, 'pre-invoke.js');
+const preInvokeCode = process.env.PRE_INVOKE || '';
+const preInvokeTplPath = path.join(__dirname, 'pre-invoke.js.tpl');
+const preInvokeScrPath = path.join(__dirname, 'pre-invoke.js');
 fs.writeFileSync(preInvokeScrPath, _.template(fs.readFileSync(preInvokeTplPath, 'utf8'))({ code: preInvokeCode }), 'utf8');
-var preInvoke = require('./pre-invoke');
+const preInvoke = require('./pre-invoke');
 
 
 
-var soapPort = process.env.PORT || 3000;
-var baseAddress = process.env.BASE_ADDRESS || 'http://0.0.0.0:' + soapPort;
-var timeout = process.env.TIMEOUT || 20 * 60 * 1000; // 20mins
+const apiPort = process.env.PORT || 3000;
+const baseAddress = process.env.BASE_ADDRESS || 'http://0.0.0.0:' + apiPort;
+const timeout = process.env.TIMEOUT || 20 * 60 * 1000; // 20mins
+const registerOnFinish = JSON.parse(process.env.REGISTER_ONFINISH || 'false');
 
 
 
-var rawWsdl = fs.readFileSync(path.resolve(__dirname, 'spec.wsdl'), 'utf8');
-var wsdl = rawWsdl.replace(/{{baseAddress}}/g, baseAddress);
+const rawWsdl = fs.readFileSync(path.resolve(__dirname, 'spec.wsdl'), 'utf8');
+const wsdl = rawWsdl.replace(/{{baseAddress}}/g, baseAddress);
 
 var apiSpec;
 
@@ -129,7 +130,7 @@ var invoke = function(input, executableName, invokerName, callback) {
       resultsSchema: item.results_schema,
       resultsStream: resultsStream
     }, function(err2, results) {
-      if (err2) console.error(err2);
+      if (err2) console.error('unstreamifyResults error', err2);
 
       // Map results
       _.each(results, function(value, name) {
@@ -162,7 +163,7 @@ var invoke = function(input, executableName, invokerName, callback) {
 };
 
 var toSoapError = function(err) {
-  console.error(err);
+  console.error('SOAP error', err);
 
   return {
     Fault: {
@@ -218,7 +219,7 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
   // Initialize endpoints defined by WSDL ports
   _.each([ 'executables', 'invokers' ], function(collection) {
     _.each(apiSpec[collection], function(item, name) {
-      var context = { executableName: null, invokerName: null };
+      const context = { executableName: null, invokerName: null };
 
       if (collection === 'executables') context.executableName = name;
       else if (collection === 'invokers') context.invokerName = name;
@@ -229,63 +230,84 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         item.wsdlParamsMap[param.wsdl_name] = name;
       });
 
-      var port = {};
+      const port = {};
       port[item.wsdl_service_name] = {};
-      port[item.wsdl_service_name][item.wsdl_port_name] = {
-        invoke: _.bind(function(input, callback, headers) {
-          debug('invoke', 'wsdl_name', item.wsdl_name);
-          debug('invoke', 'input', input);
-          debug('invoke', 'context', this);
+      port[item.wsdl_service_name][item.wsdl_port_name] = {};
 
-          input = input || {};
+      port[item.wsdl_service_name][item.wsdl_port_name][item.wsdl_name + 'Invoke'] = _.bind(function(input, callback, headers) {
+        debug(item.wsdl_name + 'Invoke', 'input', input);
+        debug(item.wsdl_name + 'Invoke', 'context', this);
 
-          invoke(input, this.executableName, this.invokerName, function(err, output) {
-            if (err) throw toSoapError(err);
+        input = input || {};
 
-            debug('invoke', 'output', output);
+        invoke(input, this.executableName, this.invokerName, function(err, output) {
+          if (err) throw toSoapError(err);
 
-            callback(output);
-          });
-        }, context),
-        invokeAsync: _.bind(function(input, callback, headers) {
-          debug('invokeAsync', 'wsdl_name', item.wsdl_name);
-          debug('invokeAsync', 'input', input);
-          debug('invokeAsync', 'context', this);
+          debug(item.wsdl_name + 'Invoke', 'output', output);
 
-          input = input || {};
+          callback(output);
+        });
+      }, context);
 
-          if (!input.callback) throw toSoapError(new Error('callback URL missing'));
-          else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
+      port[item.wsdl_service_name][item.wsdl_port_name][item.wsdl_name + 'InvokeAsync'] = _.bind(function(input, callback, headers) {
+        debug(item.wsdl_name + 'InvokeAsync', 'input', input);
+        debug(item.wsdl_name + 'InvokeAsync', 'context', this);
 
-          invoke(input, this.executableName, this.invokerName, function(err, output) {
-            if (err) return console.error(err);
+        input = input || {};
 
-            debug('invokeAsync', 'output', output);
+        if (!input.callback) throw toSoapError(new Error('callback URL missing'));
+        else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
 
-            soap.createClient(input.callback + '?wsdl', {
-              endpoint: input.callback
-            }, function(err, client) {
-              if (err) return console.error(err);
+        invoke(input, this.executableName, this.invokerName, function(err, output) {
+          if (err) return console.error(item.wsdl_name + 'InvokeAsync error', err);
 
-              client[item.wsdl_cb_service_name][item.wsdl_cb_port_name](output, function(err, result) {
-                if (err) return console.error(err);
-              });
+          debug(item.wsdl_name + 'InvokeAsync', 'output', output);
+
+          soap.createClient(input.callback + '?wsdl', {
+            endpoint: input.callback
+          }, function(err, client) {
+            if (err) return console.error(item.wsdl_name + 'InvokeOnFinish createClient error', err);
+
+            const onFinish = client[item.wsdl_cb_service_name][item.wsdl_cb_port_name][item.wsdl_name + 'InvokeOnFinish'];
+
+            onFinish(output, function(err, result) {
+              if (err) return console.error(item.wsdl_name + 'InvokeOnFinish client request error', err);
             });
           });
+        });
 
-          callback();
-        }, context)
-      };
+        callback();
+      }, context);
 
       soap.listen(server, '/' + item.wsdl_url_path, port, wsdl);
+
+      // Callback endpoints for testing
+      if (registerOnFinish) {
+        const cbUrl = '/' + item.wsdl_name + 'Callback';
+        const cbWsdl = wsdl.replace('http://[host]:[port]' + cbUrl, baseAddress + cbUrl);
+
+        const cbPort = {};
+        cbPort[item.wsdl_cb_service_name] = {};
+        cbPort[item.wsdl_cb_service_name][item.wsdl_cb_port_name] = {};
+
+        cbPort[item.wsdl_cb_service_name][item.wsdl_cb_port_name][item.wsdl_name + 'InvokeOnFinish'] = function(input, callback, headers) {
+          console.log(item.wsdl_name + 'InvokeOnFinish called', JSON.stringify(input, null, 2));
+
+          callback();
+        };
+
+        soap.listen(server, cbUrl, cbPort, cbWsdl);
+
+        console.log(item.wsdl_name + 'InvokeOnFinish operation registered: ' + cbUrl);
+      }
     });
   });
 
-  server.listen(soapPort, function(err) {
+  server.listen(apiPort, function(err) {
     if (err) throw err;
   });
 
-  console.log('server listening on port ' + soapPort);
+  console.log('server listening on port ' + apiPort);
 });
 
 

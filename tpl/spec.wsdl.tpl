@@ -40,7 +40,7 @@
             </annotation>
             <% } %>
           </element>
-          <% }); %> <!-- TODO: consider paramsRequired -> minOccurs=1 -->
+          <% }); %> <!-- TODO: consider paramsRequired: minOccurs=1 -->
           <any minOccurs="0" maxOccurs="unbounded" namespace="##targetNamespace"/>
         </sequence>
         <anyAttribute/>
@@ -79,7 +79,7 @@
       <% }); %>
 
       <% _.forEach(_.map(invokers, function(invoker, name) { invoker.invoker = true; return invoker; }).concat(_.map(executables)), function(item) { %>
-      <element name="<%= item.wsdl_name %>">
+      <element name="<%= item.wsdl_name %>Invoke">
         <complexType>
           <sequence>
             <element name="instance" type="<%= implementation.wsdl_ns_prefix %>:instanceWritable"/>
@@ -91,7 +91,16 @@
         </complexType>
       </element>
 
-      <element name="<%= item.wsdl_name %>Async">
+      <element name="<%= item.wsdl_name %>InvokeResponse">
+        <complexType>
+          <sequence>
+            <element name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
+            <element name="results" type="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Results"/>
+          </sequence>
+        </complexType>
+      </element>
+
+      <element name="<%= item.wsdl_name %>InvokeAsync">
         <complexType>
           <sequence>
             <element name="instance" type="<%= implementation.wsdl_ns_prefix %>:instanceWritable"/>
@@ -104,7 +113,7 @@
         </complexType>
       </element>
 
-      <element name="<%= item.wsdl_name %>Response">
+      <element name="<%= item.wsdl_name %>InvokeOnFinish">
         <complexType>
           <sequence>
             <element name="instance" type="<%= implementation.wsdl_ns_prefix %>:instance"/>
@@ -128,19 +137,19 @@
 
   <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <message name="<%= item.wsdl_name %>InvokeInput">
-    <part name="<%= item.wsdl_name %>InvokeInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>"/>
+    <part name="<%= item.wsdl_name %>InvokeInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Invoke"/>
   </message>
 
   <message name="<%= item.wsdl_name %>InvokeOutput">
-    <part name="<%= item.wsdl_name %>InvokeOutput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Response"/>
+    <part name="<%= item.wsdl_name %>InvokeOutput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>InvokeResponse"/>
   </message>
 
   <message name="<%= item.wsdl_name %>InvokeAsyncInput">
-    <part name="<%= item.wsdl_name %>InvokeAsyncInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Async"/>
+    <part name="<%= item.wsdl_name %>InvokeAsyncInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>InvokeAsync"/>
   </message>
 
-  <message name="<%= item.wsdl_name %>OnFinishInput">
-    <part name="<%= item.wsdl_name %>OnFinishInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>Response"/>
+  <message name="<%= item.wsdl_name %>InvokeOnFinishInput">
+    <part name="<%= item.wsdl_name %>InvokeOnFinishInput" element="<%= implementation.wsdl_ns_prefix %>:<%= item.wsdl_name %>InvokeOnFinish"/>
   </message>
   <% }); %>
 
@@ -150,19 +159,19 @@
 
   <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <portType name="<%= item.wsdl_porttype_name %>">
-    <operation name="invoke">
+    <operation name="<%= item.wsdl_name %>Invoke">
       <input message="tns:<%= item.wsdl_name %>InvokeInput"/>
       <output message="tns:<%= item.wsdl_name %>InvokeOutput"/>
       <!-- <fault message="tns:fault"/> -->
     </operation>
-    <operation name="invokeAsync">
+    <operation name="<%= item.wsdl_name %>InvokeAsync">
       <input message="tns:<%= item.wsdl_name %>InvokeAsyncInput"/>
     </operation>
   </portType>
 
   <portType name="<%= item.wsdl_cb_porttype_name %>">
-    <operation name="onFinish">
-      <input message="tns:<%= item.wsdl_name %>OnFinishInput"/>
+    <operation name="<%= item.wsdl_name %>InvokeOnFinish">
+      <input message="tns:<%= item.wsdl_name %>InvokeOnFinishInput"/>
     </operation>
   </portType>
   <% }); %>
@@ -174,8 +183,8 @@
   <% _.forEach(_.map(invokers).concat(_.map(executables)), function(item) { %>
   <binding name="<%= item.wsdl_soapbinding_name %>" type="tns:<%= item.wsdl_porttype_name %>">
     <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
-    <operation name="invoke">
-      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>/invoke"/>
+    <operation name="<%= item.wsdl_name %>Invoke">
+      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>Invoke"/>
       <input>
         <!-- <SOAP:body use="encoded" namespace="< % = implementation.wsdl_ns % >" encodingStyle="http://www.w3.org/2003/05/soap-encoding"/> -->
         <SOAP:body use="literal" namespace="<%= implementation.wsdl_ns %>"/>
@@ -185,8 +194,8 @@
       </output>
       <!-- <fault><SOAP:body use="literal" namespace="< % = implementation.wsdl_ns % >"/></fault> -->
     </operation>
-    <operation name="invokeAsync">
-      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>/invokeAsync"/>
+    <operation name="<%= item.wsdl_name %>InvokeAsync">
+      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>InvokeAsync"/>
       <input>
         <SOAP:body use="literal" namespace="<%= implementation.wsdl_ns %>"/>
       </input>
@@ -195,8 +204,8 @@
 
   <binding name="<%= item.wsdl_cb_soapbinding_name %>" type="tns:<%= item.wsdl_cb_porttype_name %>">
     <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
-    <operation name="onFinish">
-      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>/onFinish"/>
+    <operation name="<%= item.wsdl_name %>InvokeOnFinish">
+      <SOAP:operation style="document" soapAction="<%= implementation.wsdl_ns %>/<%= item.wsdl_name %>InvokeOnFinish"/>
       <input>
         <SOAP:body use="literal" namespace="<%= implementation.wsdl_ns %>"/>
       </input>
@@ -215,10 +224,10 @@
     </port>
   </service>
 
-  <!-- This service endpoint has to be provided by the invoker, e.g. a BPEL workflow invoking the service -->
+  <!-- This service endpoint has to be provided by the invoker such as a BPEL workflow -->
   <service name="<%= item.wsdl_cb_service_name %>">
     <port name="<%= item.wsdl_cb_port_name %>" binding="tns:<%= item.wsdl_cb_soapbinding_name %>">
-      <SOAP:address location="http://[HOST]:[PORT]"/>
+      <SOAP:address location="http://[host]:[port]/<%= item.wsdl_name %>Callback"/>
     </port>
   </service>
   <% }); %>
