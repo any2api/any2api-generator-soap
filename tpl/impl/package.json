@@ -4,8 +4,7 @@
   "scripts": {
     "prepare-runtime": "npm install --loglevel error && export IMPL_DIR=`pwd` && for INVOKER_DIR in ./invokers/*; do cd $IMPL_DIR; cd $INVOKER_DIR; npm run prepare-runtime; done",
     "start": "node ./app.js",
-    "test": "mocha",
-    "smoketest": "mocha smoketest"
+    "test": "mocha"
   },
   "dependencies": {
     "soap": "~0.13.0",
@@ -15,10 +14,11 @@
     "string": "~3.3.1",
     "async": "~1.5.2",
     "shortid": "~2.2.4",
-    "any2api-util": "*" 
+    "any2api-util": "*"
   },
   "devDependencies": {
     "mocha": "~2.4.5",
-    "chai": "~3.5.0"
+    "chai": "~3.5.0",
+    "any2api-testssh": "*"
   }
 }

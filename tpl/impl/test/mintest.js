@@ -1,68 +1,89 @@
-var chai = require('chai');
-var expect = chai.expect;
-var fs = require('fs');
-var path = require('path');
-var async = require('async');
-var _ = require('lodash');
-var soap = require('soap');
+const chai = require('chai');
+const expect = chai.expect;
+const fs = require('fs');
+const path = require('path');
+const async = require('async');
+const _ = require('lodash');
+const soap = require('soap');
+const uuid = require('uuid');
+const testssh = require('any2api-testssh');
 
 
 
 process.env.PORT = process.env.PORT || 3000;
 process.env.BASE_ADDRESS = process.env.BASE_ADDRESS || 'http://localhost:' + process.env.PORT;
-var baseUrl = process.env.BASE_ADDRESS + '/?wsdl';
+const baseUrl = process.env.BASE_ADDRESS + '/?wsdl';
+const containerHost = process.env.CONTAINER_HOST || 'localhost';
+const containerPort = process.env.CONTAINER_PORT || 2222;
+const containerName = 'testssh-' + uuid.v4();
 
-process.env.TIMEOUT = process.env.TIMEOUT || 10 * 60 * 1000; // 10mins
-var interval = process.env.INTERVAL || 1000 * 5; // 5 seconds
+const timeout = 10 * 60 * 1000; // 10mins
 
-var app = require('../app');
+const app = require('../app');
+
 var appListening = false;
-app.on('listening', function() {
-  appListening = true;
-});
-
-var input = {};
-
-var options = {
-  wsdl_options: {
-    rejectUnauthorized: false,
-    timeout: process.env.TIMEOUT
-  }
-};
+app.on('listening', () => { appListening = true });
 
 
 
-describe('minimum test', function() {
-  this.timeout(process.env.TIMEOUT);
+describe('minimum test:', function() {
+  this.timeout(timeout);
 
-  var endpoints = [];
+  const endpoints = [];
 
-  before('get executables', function(done) {
-    fs.readFile(path.resolve(__dirname, '..', 'apispec.json'), 'utf8', function(err, content) {
+  before('identify endpoints of executables', done => {
+    fs.readFile(path.resolve(__dirname, '..', 'apispec.json'), 'utf8', (err, content) => {
       if (err) throw err;
 
-      var apiSpec = JSON.parse(content);
+      const apiSpec = JSON.parse(content);
 
-      _.each(apiSpec.executables, function(executable, name) {
-        endpoints.push({ service: executable.wsdl_service_name, port: executable.wsdl_port_name });
+      _.each(apiSpec.executables, (executable, name) => {
+        endpoints.push({
+          service: executable.wsdl_service_name,
+          port: executable.wsdl_port_name,
+          operation: executable.wsdl_name + 'Invoke'
+        });
       });
 
       done();
     });
   });
 
-  it('run executables with default parameters', function(done) {
-    if (appListening) {
-      performRequests(endpoints, done);
-    } else {
-      app.on('listening', function() {
-        performRequests(endpoints, done);
-      });
-    }
+  it('run executables locally with default parameters', function(done) {
+    const input = {};
+
+    if (appListening) makeRequests(endpoints, input, done);
+    else app.on('listening', () => makeRequests(endpoints, input, done));
+  });
+
+  it('run executables remotely (SSH) with default parameters', function(done) {
+    const input = {
+      parameters: {
+        invokerConfig: JSON.stringify({
+          access: 'ssh',
+          ssh_port: containerPort,
+          ssh_host: containerHost,
+          ssh_user: testssh.username,
+          ssh_private_key: testssh.privateKey
+        })
+      }
+    };
+
+    async.series([
+      done => {
+        testssh.startContainer(containerName, containerPort, done);
+      },
+      done => {
+        if (appListening) makeRequests(endpoints, input, done);
+        else app.on('listening', () => makeRequests(endpoints, input, done));
+      }
+    ], done);
   });
 
   after('stop app', function(done) {
-    app.close(function(err) {
+    testssh.stopContainer(containerName, done);
+
+    app.close(err => {
       if (err) throw err;
 
       done();
@@ -72,10 +93,13 @@ describe('minimum test', function() {
 
 
 
-var performRequests = function(endpoints, done) {
-  async.eachSeries(endpoints, function(endpoint, done) {
-    soap.createClient(baseUrl, options, function(err, client) {
-      client[endpoint.service][endpoint.port].invoke(input, function(err, output) {
+const makeRequests = (endpoints, input, done) => {
+  async.eachSeries(endpoints, (endpoint, done) => {
+    soap.createClient(baseUrl, {
+      wsdl_options: { rejectUnauthorized: false },
+      timeout: timeout
+    }, (err, client) => {
+      client[endpoint.service][endpoint.port][endpoint.operation](input, (err, output) => {
         if (err) return done(err);
 
         console.log(output);
@@ -88,7 +112,7 @@ var performRequests = function(endpoints, done) {
         done();
       });
     });
-  }, function(err) {
+  }, (err) => {
     if (err) throw err;
 
     done();
