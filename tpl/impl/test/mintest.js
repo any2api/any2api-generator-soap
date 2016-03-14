@@ -56,7 +56,7 @@ describe('minimum test:', function() {
     else app.on('listening', () => makeRequests(endpoints, input, done));
   });
 
-  it('run executables remotely (SSH) with default parameters', function(done) {
+  it('run executables remotely with default parameters: ssh://' + CONTAINER_HOST + ':' + CONTAINER_PORT, function(done) {
     const input = {
       parameters: {
         invokerConfig: { // JSON.stringify (because this is actually JSON payload)
