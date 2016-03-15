@@ -254,8 +254,11 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         debug(item.wsdl_name + 'InvokeAsync', 'context', this);
 
         input = input || {};
+        headers = headers || {};
 
-        if (!input.callback) throw toSoapError(new Error('callback URL missing'));
+        const callbackUrl = input.callback || headers.callback || headers.Callback;
+
+        if (!callbackUrl) throw toSoapError(new Error('callback URL missing'));
         else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
 
         invoke(input, this.executableName, this.invokerName, function(err, output) {
@@ -263,8 +266,8 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
 
           debug(item.wsdl_name + 'InvokeAsync', 'output', output);
 
-          soap.createClient(input.callback + '?wsdl', {
-            endpoint: input.callback
+          soap.createClient(callbackUrl + '?wsdl', {
+            endpoint: callbackUrl
           }, function(err, client) {
             if (err) return console.error(item.wsdl_name + 'InvokeOnFinish createClient error', err);
 
