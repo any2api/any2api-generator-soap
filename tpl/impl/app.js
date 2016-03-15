@@ -259,7 +259,7 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         const callbackUrl = input.callback || headers.callback || headers.Callback;
 
         if (!callbackUrl) throw toSoapError(new Error('callback URL missing'));
-        else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
+        //else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
 
         invoke(input, this.executableName, this.invokerName, function(err, output) {
           if (err) return console.error(item.wsdl_name + 'InvokeAsync error', err);
