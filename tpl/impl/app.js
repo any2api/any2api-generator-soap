@@ -89,10 +89,11 @@ var invoke = function(input, executableName, invokerName, callback) {
       }, callback);
     },
     function(callback) {
-      preInvoke(instance, executable, invoker, function(err, inst) {
-        debug('instance', instance);
+      preInvoke(instance, parameters, executable, invoker, function(err, inst, params) {
+        debug('preInvoke instance', instance);
 
-        instance = inst;
+        instance = inst || instance;
+        parameters = params || parameters;
 
         callback(err);
       });
@@ -256,7 +257,7 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         input = input || {};
         headers = headers || {};
 
-        const callbackUrl = input.callback || headers.callback || headers.Callback;
+        const callbackUrl = input.callback || headers.callback;
 
         if (!callbackUrl) throw toSoapError(new Error('callback URL missing'));
         //else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));

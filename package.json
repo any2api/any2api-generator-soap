@@ -1,6 +1,6 @@
 {
   "name": "any2api-generator-soap",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "author": "Johannes Wettinger <mail@jojow.de>",
   "description": "SOAP/WSDL API implementation generator for any2api",
   "repository": {

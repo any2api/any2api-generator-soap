@@ -1,10 +1,10 @@
 var _ = require('lodash');
 var async = require('async');
 
-module.exports = function(instance, executable, invoker, callback) {
+module.exports = function(instance, parameters, executable, invoker, callback) {
   callback = _.once(callback);
 
   <%= code %>
 
-  callback(null, instance);
+  callback(null, instance, parameters);
 };
