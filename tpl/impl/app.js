@@ -126,6 +126,8 @@ var invoke = function(input, executableName, invokerName, callback) {
       });
     }
   ], function(err) {
+    if (err) return callback(err, output);
+
     // Consume results stream
     util.unstreamifyResults({
       resultsSchema: item.results_schema,
@@ -158,7 +160,7 @@ var invoke = function(input, executableName, invokerName, callback) {
         output.results[wsdlName].attributes = { resultName: _.escape(name) };
       });
 
-      callback(err, output);
+      callback(null, output);
     });
   });
 };
@@ -235,24 +237,22 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
       port[item.wsdl_service_name] = {};
       port[item.wsdl_service_name][item.wsdl_port_name] = {};
 
-      port[item.wsdl_service_name][item.wsdl_port_name][item.wsdl_name + 'Invoke'] = _.bind(function(input, callback, headers) {
+      port[item.wsdl_service_name][item.wsdl_port_name][item.wsdl_name + 'Invoke'] = function(input, callback, headers) {
         debug(item.wsdl_name + 'Invoke', 'input', input);
-        debug(item.wsdl_name + 'Invoke', 'context', this);
 
         input = input || {};
 
-        invoke(input, this.executableName, this.invokerName, function(err, output) {
+        invoke(input, context.executableName, context.invokerName, function(err, output) {
           if (err) throw toSoapError(err);
 
           debug(item.wsdl_name + 'Invoke', 'output', output);
 
           callback(output);
         });
-      }, context);
+      };
 
-      port[item.wsdl_service_name][item.wsdl_port_name][item.wsdl_name + 'InvokeAsync'] = _.bind(function(input, callback, headers) {
+      port[item.wsdl_service_name][item.wsdl_port_name][item.wsdl_name + 'InvokeAsync'] = function(input, callback, headers) {
         debug(item.wsdl_name + 'InvokeAsync', 'input', input);
-        debug(item.wsdl_name + 'InvokeAsync', 'context', this);
 
         input = input || {};
         headers = headers || {};
@@ -262,7 +262,7 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         if (!callbackUrl) throw toSoapError(new Error('callback URL missing'));
         //else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
 
-        invoke(input, this.executableName, this.invokerName, function(err, output) {
+        invoke(input, context.executableName, context.invokerName, function(err, output) {
           if (err) return console.error(item.wsdl_name + 'InvokeAsync error', err);
 
           debug(item.wsdl_name + 'InvokeAsync', 'output', output);
@@ -281,7 +281,7 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         });
 
         callback();
-      }, context);
+      };
 
       soap.listen(server, '/' + item.wsdl_url_path, port, wsdl);
 
