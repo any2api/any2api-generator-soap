@@ -174,7 +174,8 @@ var toSoapError = function(err) {
         Value: "soap:Sender"
         //, Subcode: { value: "soap:Error" }
       },
-      Reason: { Text: err.soapText || err.message || err.toString() }
+      Reason: { Text: err.soapText || err.message || err.toString() },
+      statusCode: 500
     }
   };
 };
@@ -243,7 +244,8 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         input = input || {};
 
         invoke(input, context.executableName, context.invokerName, function(err, output) {
-          if (err) throw toSoapError(err);
+          //if (err) throw toSoapError(err);
+          if (err) return callback(toSoapError(err));
 
           debug(item.wsdl_name + 'Invoke', 'output', output);
 
@@ -260,7 +262,7 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         const callbackUrl = input.callback || headers.callback;
 
         if (!callbackUrl) throw toSoapError(new Error('callback URL missing'));
-        //else if (!input.instance || !input.instance.id) throw toSoapError(new Error('instance ID missing'));
+        //if (!callbackUrl) return callback(toSoapError(new Error('callback URL missing')));
 
         invoke(input, context.executableName, context.invokerName, function(err, output) {
           if (err) return console.error(item.wsdl_name + 'InvokeAsync error', err);
