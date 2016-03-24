@@ -12,5 +12,5 @@ module.exports = function(instance, parameters, executable, invoker, callback) {
     callback(err, instance, parameters);
   }
 
-  callback(null, instance, parameters);
+  //callback(null, instance, parameters);
 };

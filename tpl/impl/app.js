@@ -19,7 +19,7 @@ const preInvokeScrPath = path.join(__dirname, 'pre-invoke.js');
 fs.writeFileSync(preInvokeScrPath, _.template(fs.readFileSync(preInvokeTplPath, 'utf8'))({ code: preInvokeCode }), 'utf8');
 const preInvoke = require('./pre-invoke');
 
-
+const authToken = process.env.AUTH_TOKEN;
 
 const apiPort = process.env.PORT || 3000;
 const baseAddress = process.env.BASE_ADDRESS || 'http://0.0.0.0:' + apiPort;
@@ -242,6 +242,11 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         debug(item.wsdl_name + 'Invoke', 'input', input);
 
         input = input || {};
+        headers = headers || {};
+
+        const token = input.token || headers.token;
+
+        if (authToken && token !== authToken) throw toSoapError(new Error('invalid token'));
 
         invoke(input, context.executableName, context.invokerName, function(err, output) {
           //if (err) throw toSoapError(err);
@@ -259,10 +264,11 @@ util.readSpec({ specPath: path.join(__dirname, 'apispec.json') }, function(err, 
         input = input || {};
         headers = headers || {};
 
+        const token = input.token || headers.token;
         const callbackUrl = input.callback || headers.callback;
 
-        if (!callbackUrl) throw toSoapError(new Error('callback URL missing'));
-        //if (!callbackUrl) return callback(toSoapError(new Error('callback URL missing')));
+        if (authToken && token !== authToken) throw toSoapError(new Error('invalid token'));
+        else if (!callbackUrl) throw toSoapError(new Error('callback URL missing'));
 
         invoke(input, context.executableName, context.invokerName, function(err, output) {
           if (err) return console.error(item.wsdl_name + 'InvokeAsync error', err);
