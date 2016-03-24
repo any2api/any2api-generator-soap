@@ -1,10 +1,16 @@
-var _ = require('lodash');
-var async = require('async');
+const _ = require('lodash');
+const async = require('async');
 
 module.exports = function(instance, parameters, executable, invoker, callback) {
   callback = _.once(callback);
 
-  <%= code %>
+  const done = callback;
+
+  try {
+    <%= code %>
+  } catch (err) {
+    callback(err, instance, parameters);
+  }
 
   callback(null, instance, parameters);
 };
