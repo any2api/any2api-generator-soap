@@ -1,8 +1,12 @@
 language: node_js
 node_js:
 - '4'
+
 deploy:
   provider: npm
   email: mail@jojow.de
   api_key:
     secure: c20n6lruRjGXUT919JhZtV/RrPCkzt5noFOJu/J2nQerHAeTzyYcojGyjkWnYmPe1wc54XCT5304OnpqlRlJ6WLa2ep6lzxBR52bKqRy8H8iJZBNDAYs6phSN29xuscxBa6TXIg2D1ikBErjZE4QQlijch5MNIyf1MFUSpo6sTs=
+
+after_deploy:
+- 'curl -H "Content-Type: application/json" --data \'{"build": true}\' -X POST https://registry.hub.docker.com/u/any2api/cli/trigger/$CLI_DOCKERHUB_BUILD_TOKEN/'
