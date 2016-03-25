@@ -12,5 +12,6 @@ module.exports = function(instance, parameters, executable, invoker, callback) {
     callback(err, instance, parameters);
   }
 
+  //TODO setTimeout: callback with err due to timeout
   //callback(null, instance, parameters);
 };
