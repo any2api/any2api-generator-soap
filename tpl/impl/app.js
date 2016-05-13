@@ -147,6 +147,9 @@ var invoke = function(input, executableName, invokerName, callback) {
 
         if (output.results[wsdlName]) wsdlName += '_' + shortId.generate();
 
+        // Remove control characters
+        if (_.isString(value)) value = value.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+
         if (_.includes(resultDef.type.toLowerCase(), 'json')) {
           output.results[wsdlName] = { '$value': JSON.stringify(value, null, 2) };
         } else if (/*_.includes(resultDef.type.toLowerCase(), 'binary') &&*/ Buffer.isBuffer(value)) {
